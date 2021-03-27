@@ -1,0 +1,7 @@
+.vscode/
+*.exe
+test*.cpp
+
+in.txt
+out.txt
+ans.txt
