@@ -50,56 +50,42 @@ public:
 
 class Dragon: public Warrior {
 public:
-    static int default_hp;
-
-    Dragon(int id, char army, int tick_born):
-        Warrior(id, DRAGON, army, tick_born, Dragon::default_hp)
+    Dragon(int id, char army, int tick_born, int hp):
+        Warrior(id, DRAGON, army, tick_born, hp)
     {};
 };
-int Dragon::default_hp{0};
 
 class Ninja: public Warrior {
 public:
-    static int default_hp;
-
-    Ninja(int id, char army, int tick_born):
-        Warrior(id, NINJA, army, tick_born, Ninja::default_hp)
+    Ninja(int id, char army, int tick_born, int hp):
+        Warrior(id, NINJA, army, tick_born, hp)
     {};    
 };
-int Ninja::default_hp{0};
 
 class Iceman: public Warrior {
 public:
-    static int default_hp;
-
-    Iceman(int id, char army, int tick_born):
-        Warrior(id, ICEMAN, army, tick_born, Iceman::default_hp)
+    Iceman(int id, char army, int tick_born, int hp):
+        Warrior(id, ICEMAN, army, tick_born, hp)
     {}; 
 };
-int Iceman::default_hp{0};
 
 class Lion: public Warrior {
 public:
-    static int default_hp;
-
-    Lion(int id, char army, int tick_born):
-        Warrior(id, LION, army, tick_born, Lion::default_hp)
+    Lion(int id, char army, int tick_born, int hp):
+        Warrior(id, LION, army, tick_born, hp)
     {};
 };
-int Lion::default_hp{0};
 
 class Wolf: public Warrior {
 public:
-    static int default_hp;
-    Wolf(int id, char army, int tick_born):
-        Warrior(id, WOLF, army, tick_born, Wolf::default_hp)
+    Wolf(int id, char army, int tick_born, int hp):
+        Warrior(id, WOLF, army, tick_born, hp)
     {};
 };
-int Wolf::default_hp{0};
 
 using WarriorOrder = array<char, COUNT_WARRIOR_TYPE>;
 using Units = vector<Warrior *>;
-using LenUnits = map<char, int>;
+using map_c_i = map<char, int>;
 
 enum HqStatus { ACTIVE, STOPPED };
 class Headquarter {
@@ -108,10 +94,11 @@ public:
     int hp;
     WarriorOrder warrior_order;
     Units units;
-    LenUnits len_units;
+    map_c_i len_units;
 
     int tick;
     HqStatus status;
+    map_c_i *p_default_hp;
 
 private:
     int gen_current;
@@ -134,9 +121,6 @@ public:
     }
 
 private:
-    bool is_hp_enough(int hp_required) {
-        // cout << this->army << " hp: " << this->hp << " hp_required: " << hp_required << endl;
-        return this->hp >= hp_required; }
     void log_gen(const Warrior &);
     void log_stop_gen();
 
@@ -150,6 +134,9 @@ void Headquarter::gen() {
     int id = this->units.size() + 1;
     int first_try = this->gen_current;
 
+    Warrior *p_warrior = nullptr;
+    char warrior_type = ' ';
+    int warrior_hp_cost = 0;
     while(status >= TRY) {
         if(status == FALLTHROUGH && this->gen_current == first_try) {
             this->log_stop_gen();
@@ -158,68 +145,23 @@ void Headquarter::gen() {
             break;
         }
         // cout << "army " << this->army << " tries " << this->warrior_order[this->gen_current] << endl;
-        switch(this->warrior_order[this->gen_current]) {
-            case DRAGON:
-                if(is_hp_enough(Dragon::default_hp)) {
-                    this->hp -= Dragon::default_hp;
-                    Dragon * dragon = new Dragon(id, this->army, this->tick);
-                    this->units.push_back(dragon);
-                    this->len_units[DRAGON]++;
-                    this->log_gen(*dragon);
-                    status = SUCCESS;
-                }
-                else status = FALLTHROUGH;
-                this->gen_current = (this->gen_current + 1) % COUNT_WARRIOR_TYPE;
-                break;
-            case NINJA:
-                if(is_hp_enough(Ninja::default_hp)) {
-                    this->hp -= Ninja::default_hp;
-                    Ninja * ninja = new Ninja(id, this->army, this->tick);
-                    this->units.push_back(ninja);
-                    this->len_units[NINJA]++;
-                    this->log_gen(*ninja);
-                    status = SUCCESS;
-                }
-                else status = FALLTHROUGH;
-                this->gen_current = (this->gen_current + 1) % COUNT_WARRIOR_TYPE;
-                break;
-            case ICEMAN:
-                if(is_hp_enough(Iceman::default_hp)) {
-                    this->hp -= Iceman::default_hp;
-                    Iceman * iceman = new Iceman(id, this->army, this->tick);
-                    this->units.push_back(iceman);
-                    this->len_units[ICEMAN]++;
-                    this->log_gen(*iceman);
-                    status = SUCCESS;
-                }
-                else status = FALLTHROUGH;
-                this->gen_current = (this->gen_current + 1) % COUNT_WARRIOR_TYPE;
-                break;
-            case LION:
-                if(is_hp_enough(Lion::default_hp)) {
-                    this->hp -= Lion::default_hp;
-                    Lion * lion = new Lion(id, this->army, this->tick);
-                    this->units.push_back(lion);
-                    this->len_units[LION]++;
-                    this->log_gen(*lion);
-                    status = SUCCESS;
-                }
-                else status = FALLTHROUGH;
-                this->gen_current = (this->gen_current + 1) % COUNT_WARRIOR_TYPE;
-                break;
-            case WOLF:
-                if(is_hp_enough(Wolf::default_hp)) {
-                    this->hp -= Wolf::default_hp;
-                    Wolf * wolf = new Wolf(id, this->army, this->tick);
-                    this->units.push_back(wolf);
-                    this->len_units[WOLF]++;
-                    this->log_gen(*wolf);
-                    status = SUCCESS;
-                }
-                else status = FALLTHROUGH;
-                this->gen_current = (this->gen_current + 1) % COUNT_WARRIOR_TYPE;
-                break;
-        }
+        warrior_type = this->warrior_order[this->gen_current];
+        warrior_hp_cost = (*(this->p_default_hp))[warrior_type];
+        if(this->hp >= warrior_hp_cost) {
+            this->hp -= warrior_hp_cost;
+            switch(warrior_type) {
+                case DRAGON: p_warrior = new Dragon(id, this->army, this->tick, warrior_hp_cost); break;
+                case NINJA: p_warrior = new Ninja(id, this->army, this->tick, warrior_hp_cost); break;
+                case ICEMAN: p_warrior = new Iceman(id, this->army, this->tick, warrior_hp_cost); break;
+                case LION: p_warrior = new Lion(id, this->army, this->tick, warrior_hp_cost); break;
+                case WOLF: p_warrior = new Wolf(id, this->army, this->tick, warrior_hp_cost); break;
+            }
+            status = SUCCESS;
+            this->units.push_back(p_warrior);
+            this->len_units[warrior_type]++;
+            this->log_gen(*p_warrior);
+        } else status = FALLTHROUGH;
+        this->gen_current = (this->gen_current + 1) % COUNT_WARRIOR_TYPE;
     }
     
 }
@@ -240,21 +182,18 @@ void Headquarter::log_stop_gen() {
 }
 
 class Game {
-private:
-    int tick;
 public:
     Headquarter red, blue;
+    int tick;
+    map_c_i default_hp;
 
     Game(int hp_hq, int hp_dragon, int hp_ninja, int hp_iceman, int hp_lion, int hp_wolf):
         red('r', hp_hq, {ICEMAN, LION, WOLF, NINJA, DRAGON}),
         blue('b', hp_hq, {LION, DRAGON, NINJA, ICEMAN, WOLF}),
-        tick(0)
+        tick(0),
+        default_hp{{DRAGON, hp_dragon},{NINJA, hp_ninja},{ICEMAN, hp_iceman},{LION, hp_lion},{WOLF, hp_wolf}}
     {
-        Dragon::default_hp = hp_dragon;
-        Ninja::default_hp = hp_ninja;
-        Iceman::default_hp = hp_iceman;
-        Lion::default_hp = hp_lion;
-        Wolf::default_hp = hp_wolf;
+        red.p_default_hp = &default_hp; blue.p_default_hp = &default_hp;
     };
 
     void start();
@@ -276,6 +215,7 @@ void Game::gen() {
 
 int main() {
     // freopen("in.txt", "r", stdin);
+    // freopen("out.txt","w", stdout);
 
     int n;
     cin >> n;
