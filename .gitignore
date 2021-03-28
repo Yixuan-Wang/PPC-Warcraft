@@ -5,3 +5,4 @@ test*.cpp
 in.txt
 out.txt
 ans.txt
+desc*.md
